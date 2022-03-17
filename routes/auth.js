@@ -20,7 +20,7 @@ router.post('/createUser', [
     async (req, res) => {
         try {
 
-            //Checking for error based on aforementioned rules
+            //Checking for errors based on aforementioned rules
             const errors = validationResult(req)
             if (!errors.isEmpty()) {
                 return res.status(400).json({ error: errors.array() })
