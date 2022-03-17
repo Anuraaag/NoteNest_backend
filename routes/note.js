@@ -5,23 +5,7 @@ const Note = require('../models/Note')
 const { body, validationResult } = require('express-validator')
 
 
-/* Route-1: Fetching all notes for a user - /api/note/fetch */
-router.get('/fetch', fetchUser,
-    async (req, res) => {
-        try {
-            //Fetching and returning notes
-            const notes = await Note.find({ user: req.user.id })
-            res.json({ notes })
-
-        } catch (error) {
-            console.log(error)
-            res.status(500).send("Internal Server Error")
-        }
-    }
-)
-
-
-/* Route-2: Adding a note for a user - /api/note/create */
+/* Route-1: Adding a note for a user - /api/note/create */
 router.post('/create', fetchUser, [
     body('title', 'Enter a valid title').isLength({ min: 3 }),
     body('description', 'Description must be at least 5 characters').isLength({ min: 5 })
@@ -47,7 +31,7 @@ router.post('/create', fetchUser, [
                 tag: req.body.tag,
                 user: req.user.id
             })
-            
+
             res.send({ savedNote })
 
         } catch (error) {
@@ -55,6 +39,92 @@ router.post('/create', fetchUser, [
             res.status(500).send("Internal Server Error")
         }
     }
+)
+
+/* Route-2: Fetching all notes for a user - /api/note/fetch */
+router.get('/fetch', fetchUser,
+    async (req, res) => {
+        try {
+            //Fetching and returning notes
+            const notes = await Note.find({ user: req.user.id })
+            res.json({ notes })
+
+        } catch (error) {
+            console.log(error)
+            res.status(500).send("Internal Server Error")
+        }
+    }
+)
+
+
+/* Route-3: Updating a note for a user - /api/note/update */
+router.put('/update/:id', fetchUser, [
+    body('title', 'Enter a valid title').isLength({ min: 3 }),
+    body('description', 'Description must be at least 5 characters').isLength({ min: 5 })
+],
+    async (req, res) => {
+        try {
+
+            //Checking for errors based on aforementioned rules
+            const errors = validationResult(req)
+            if (!errors.isEmpty()) {
+                return res.status(400).json({ error: errors.array() })
+            }
+
+            //Checking if the note exists
+            let note = await Note.findById(req.params.id) // db crud is async
+            if (!note) {
+                return res.status(404).json({ 'error': "Note not found" })
+            }
+
+            // checking if the note belongs to this user
+            if (note.user.toString() !== req.user.id) {
+                return res.status(401).send("Not Allowed")
+            }
+
+            //Updating the note
+            const { title, description, tag } = req.body
+            const updateInfo = {}
+            if (title) updateInfo.title = title
+            if (description) updateInfo.description = description
+            if (tag) updateInfo.tag = tag
+
+            const updatedNote = await Note.findByIdAndUpdate(req.params.id, { $set: updateInfo }, { new: true })
+
+            res.json({ updatedNote })
+
+        } catch (error) {
+            console.log(error)
+            res.status(500).send("Internal Server Error")
+        }
+    }
+)
+
+
+/* Route-4: Deleting a note for a user - /api/note/delete */
+router.delete('/delete/:id', fetchUser, async (req, res) => {
+    try {
+
+        //Checking if the note exists
+        let note = await Note.findById(req.params.id) // db crud is async
+        if (!note) {
+            return res.status(404).json({ 'error': "Note not found" })
+        }
+
+        // checking if the note belongs to this user
+        if (note.user.toString() !== req.user.id) {
+            return res.status(401).send("Not Allowed")
+        }
+
+        //Deleting the note
+        const nodeDeleted = await Note.findByIdAndDelete(req.params.id)
+        res.json({ "Deleted" : true, nodeDeleted })
+
+    } catch (error) {
+        console.log(error)
+        res.status(500).send("Internal Server Error")
+    }
+}
 )
 
 module.exports = router
