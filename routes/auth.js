@@ -5,9 +5,11 @@ const { body, validationResult } = require('express-validator')
 const bcrypt = require('bcryptjs')
 const jwt = require("jsonwebtoken");
 
+const fetchUser = require("../middleware/fetchUser")
+
 const JWT_Secret = "fg7erfgt543r%^$#"
 
-/*  Creating a new user  */
+/* Route-1: Creating a new user - /api/auth/createUser */
 //first argument has the path, second arg contains the rules, third implements the body
 router.post('/createUser', [
     body('name', 'Enter a valid name').isLength({ min: 3 }),
@@ -16,7 +18,6 @@ router.post('/createUser', [
 ],
 
     async (req, res) => {
-
         try {
 
             //Checking for error based on aforementioned rules
@@ -51,20 +52,20 @@ router.post('/createUser', [
             res.json({ 'authToken': jwtToken })
 
         } catch (error) {
-            res.status(400).json({ 'error': error })
+            console.log(error)
+            res.status(500).send("Internal Server Error")
         }
     }
 )
 
 
-/*  Logging in a new user  */
+/* Route-2: Logging in a new user - /api/auth/login */
 router.post('/login', [
     body('email', 'Enter a valid email').isEmail(),
     body('password', 'Password can not be blank').exists()
 ],
 
     async (req, res) => {
-
         try {
 
             //Checking for error based on aforementioned rules
@@ -95,11 +96,27 @@ router.post('/login', [
             res.json({ 'authToken': jwtToken })
 
         } catch (error) {
-            res.status(400).json({ 'error': error })
+            console.log(error)
+            res.status(500).send("Internal Server Error")
         }
     }
 )
 
+
+/* Route-3: Verifying the JWT sent by the user - /api/auth/getUser */
+/* Again, it is clear here that JWT is not used for authentication, but for authorization post authentication */
+router.post('/getUser', fetchUser, async (req, res) => { 
+    try {
+        userId = req.user.id
+        const user = await User.findById(userId).select("-password") // fetch all user details except the password
+        res.send({user})
+    } catch (error) {
+        console.log(error)
+        res.status(500).send("Internal Server Error")
+    }
+})
+/* The fetch user is a middleware, which runs before the async function. It simply gets the JWT from request header 
+and verifies it. If the JWT is correct, it appends the userID to the req, which is used in the async function */
 
 
 module.exports = router
