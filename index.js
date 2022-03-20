@@ -1,11 +1,13 @@
 const connectToMongo = require('./db')
 const express = require('express')
+const cors = require('cors')
 
 connectToMongo()
 
 const app = express()
 const port = 5000
 
+app.use(cors())
 app.use(express.json()) // required to handle the request body (req.body)
 
 // app.use forwards a request to another location
