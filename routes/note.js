@@ -16,7 +16,14 @@ router.post('/create', fetchUser, [
             //Checking for errors based on aforementioned rules
             const errors = validationResult(req)
             if (!errors.isEmpty()) {
-                return res.status(400).json({ 'success': false, 'payload': errors.array() })
+                return res.status(400).json({
+                    'success': false,
+                    'payload': {
+                        'message': errors.array()[0].msg,
+                        'data': [],
+                        'error': errors.array()
+                    }
+                })
             }
 
             // const {title, description, tag} = req.body
@@ -32,11 +39,26 @@ router.post('/create', fetchUser, [
                 user: req.user.id
             })
 
-            res.send({ 'success': true, 'payload': savedNote })
+            res.send({
+                'success': true,
+                'payload': {
+                    'message': `saved note`,
+                    'data': savedNote,
+                    'error': []
+                }
+            })
+
 
         } catch (error) {
             console.log(error)
-            res.status(500).send({'success': false, 'payload': "Internal Server Error"})
+            res.status(500).send({
+                'success': false,
+                'payload': {
+                    'message': "Internal Server Error",
+                    'data': [],
+                    'error': []
+                }
+            })
         }
     }
 )
@@ -47,11 +69,25 @@ router.get('/fetch', fetchUser,
         try {
             //Fetching and returning notes
             const notes = await Note.find({ user: req.user.id })
-            res.json({'success': true, 'payload': notes })
+            res.json({
+                'success': true,
+                'payload': {
+                    'message': "notes",
+                    'data': notes,
+                    'error': []
+                }
+            })
 
         } catch (error) {
             console.log(error)
-            res.status(500).send({'success': false, 'payload': "Internal Server Error"})
+            res.status(500).send({
+                'success': false,
+                'payload': {
+                    'message': "Internal Server Error",
+                    'data': [],
+                    'error': []
+                }
+            })
         }
     }
 )
@@ -68,18 +104,39 @@ router.put('/update/:id', fetchUser, [
             //Checking for errors based on aforementioned rules
             const errors = validationResult(req)
             if (!errors.isEmpty()) {
-                return res.status(400).json({'success': false, 'payload': errors.array() })
+                return res.status(400).json({
+                    'success': false,
+                    'payload': {
+                        'message': errors.array()[0].msg,
+                        'data': [],
+                        'error': errors.array()
+                    }
+                })
             }
 
             //Checking if the note exists
             let note = await Note.findById(req.params.id) // db crud is async
             if (!note) {
-                return res.status(404).json({'success': false, 'payload': "Note not found" })
+                return res.status(404).json({
+                    'success': false,
+                    'payload': {
+                        'message': "Note not found",
+                        'data': [],
+                        'error': []
+                    }
+                })
             }
 
             // checking if the note belongs to this user
             if (note.user.toString() !== req.user.id) {
-                return res.status(401).send({'success': false, 'payload': "Not Allowed"})
+                return res.status(401).json({
+                    'success': false,
+                    'payload': {
+                        'message': "Not Allowed",
+                        'data': [],
+                        'error': []
+                    }
+                })
             }
 
             //Updating the note
@@ -91,11 +148,26 @@ router.put('/update/:id', fetchUser, [
 
             const updatedNote = await Note.findByIdAndUpdate(req.params.id, { $set: updateInfo }, { new: true })
 
-            res.json({'success': true, 'payload': updatedNote })
+            res.json({
+                'success': true,
+                'payload': {
+                    'message': `updated note`,
+                    'data': updatedNote,
+                    'error': []
+                }
+            })
+
 
         } catch (error) {
             console.log(error)
-            res.status(500).send({'success': false, 'payload': "Internal Server Error"})
+            res.status(500).send({
+                'success': false,
+                'payload': {
+                    'message': "Internal Server Error",
+                    'data': [],
+                    'error': []
+                }
+            })
         }
     }
 )
@@ -108,21 +180,49 @@ router.delete('/delete/:id', fetchUser, async (req, res) => {
         //Checking if the note exists
         let note = await Note.findById(req.params.id) // db crud is async
         if (!note) {
-            return res.status(404).json({'success': false, 'payload': "Note not found" })
+            return res.status(404).json({
+                'success': false,
+                'payload': {
+                    'message': `Note not found`,
+                    'data': updatedNote,
+                    'error': []
+                }
+            })
         }
 
         // checking if the note belongs to this user
         if (note.user.toString() !== req.user.id) {
-            return res.status(401).send({'success': false, 'payload': "Not Allowed"})
+            return res.status(401).send({
+                'success': false,
+                'payload': {
+                    'message': `Not Allowed`,
+                    'data': [],
+                    'error': []
+                }
+            })
         }
 
         //Deleting the note
         const nodeDeleted = await Note.findByIdAndDelete(req.params.id)
-        res.json({ "success" : true, 'payload': nodeDeleted })
+        res.json({
+            'success': true,
+            'payload': {
+                'message': `deleted note`,
+                'data': nodeDeleted,
+                'error': []
+            }
+        })
 
     } catch (error) {
         console.log(error)
-        res.status(500).send({'success': false, 'payload': "Internal Server Error"})
+        res.status(500).send({
+            'success': false,
+            'payload': {
+                'message': "Internal Server Error",
+                'data': [],
+                'error': []
+            }
+        })
     }
 }
 )

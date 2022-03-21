@@ -23,13 +23,27 @@ router.post('/createUser', [
             //Checking for errors based on aforementioned rules
             const errors = validationResult(req)
             if (!errors.isEmpty()) {
-                return res.status(400).json({ 'success': false, 'payload': errors.array() })
+                return res.status(400).json({
+                    'success': false,
+                    'payload': {
+                        'message': errors.array()[0].msg,
+                        'data': [],
+                        'error': errors.array()
+                    }
+                })
             }
 
             //Checking if user already exists
             let user = await User.findOne({ email: req.body.email }) // db crud is async
             if (user) {
-                return res.status(400).json({ 'success': false, 'payload': "This email is already taken" })
+                return res.status(400).json({
+                    'success': false,
+                    'payload': {
+                        'message': `This email is already taken`,
+                        'data': [],
+                        'error': []
+                    }
+                })
             }
 
             //Creating user 
@@ -49,11 +63,27 @@ router.post('/createUser', [
                 }
             }
             const jwtToken = jwt.sign(payload, JWT_Secret)
-            res.json({ 'success': true,  'payload': jwtToken })
+
+            res.json({
+                'success': true,
+                'payload': {
+                    'message': "jwt auth token",
+                    'data': jwtToken,
+                    'error': errors.array()
+                }
+            })
+
 
         } catch (error) {
             console.log(error)
-            res.status(500).send( {'success': false, 'payload': "Internal Server Error"})
+            res.status(500).send({
+                'success': false,
+                'payload': {
+                    'message': "Internal Server Error",
+                    'data': [],
+                    'error': []
+                }
+            })
         }
     }
 )
@@ -71,19 +101,41 @@ router.post('/login', [
             //Checking for error based on aforementioned rules
             const errors = validationResult(req)
             if (!errors.isEmpty()) {
-                return res.status(400).json({  'success': false, 'payload': errors.array() })
+                return res.status(400).json({
+                    'success': false,
+                    'payload': {
+                        'message': errors.array()[0].msg,
+                        'data': [],
+                        'error': errors.array()
+                    }
+                })
+
             }
 
             //Checking if user exists
             let user = await User.findOne({ email: req.body.email }) // db crud is async
             if (!user) {
-                return res.status(400).json({  'success': false, 'payload': "Please enter the correct credentials" })
+                return res.status(400).json({
+                    'success': false,
+                    'payload': {
+                        'message': "Please enter the correct credentials",
+                        'data': [],
+                        'error': []
+                    }
+                })
             }
 
             //Verifying password
             const passwordCompare = await bcrypt.compare(req.body.password, user.password)
             if (!passwordCompare) {
-                return res.status(400).json({  'success': false, 'payload': "Please enter the correct credentials" })
+                return res.status(400).json({
+                    'success': false,
+                    'payload': {
+                        'message': "Please enter the correct credentials",
+                        'data': [],
+                        'error': []
+                    }
+                })
             }
 
             // User is authenticated already, so we create and send them a JWT token
@@ -93,11 +145,25 @@ router.post('/login', [
                 }
             }
             const jwtToken = jwt.sign(payload, JWT_Secret)
-            res.json({  'success': true, 'payload': jwtToken })
+            res.json({
+                'success': true,
+                'payload': {
+                    'message': "jwt auth token",
+                    'data': jwtToken,
+                    'error': []
+                }
+            })
 
         } catch (error) {
             console.log(error)
-            res.status(500).send({ 'success': false, 'payload': "Internal Server Error"})
+            res.status(500).send({
+                'success': false,
+                'payload': {
+                    'message': "Internal Server Error",
+                    'data': [],
+                    'error': []
+                }
+            })
         }
     }
 )
@@ -105,14 +171,28 @@ router.post('/login', [
 
 /* Route-3: Verifying the JWT sent by the user - /api/auth/getUser */
 /* Again, it is clear here that JWT is not used for authentication, but for authorization post authentication */
-router.post('/getUser', fetchUser, async (req, res) => { 
+router.post('/getUser', fetchUser, async (req, res) => {
     try {
         userId = req.user.id
         const user = await User.findById(userId).select("-password") // fetch all user details except the password
-        res.send({'success': true, 'payload': user})
+        res.send({
+            'success': true,
+            'payload': {
+                'message': "user details",
+                'data': user,
+                'error': []
+            }
+        })
     } catch (error) {
         console.log(error)
-        res.status(500).send({ 'success': false, 'payload': "Internal Server Error"})
+        res.status(500).send({
+            'success': false,
+            'payload': {
+                'message': "Internal Server Error",
+                'data': [],
+                'error': []
+            }
+        })
     }
 })
 /* The fetch user is a middleware, which runs before the async function. It simply gets the JWT from request header 
