@@ -23,13 +23,13 @@ router.post('/createUser', [
             //Checking for errors based on aforementioned rules
             const errors = validationResult(req)
             if (!errors.isEmpty()) {
-                return res.status(400).json({ error: errors.array() })
+                return res.status(400).json({ 'success': false, 'payload': errors.array() })
             }
 
             //Checking if user already exists
             let user = await User.findOne({ email: req.body.email }) // db crud is async
             if (user) {
-                return res.status(400).json({ 'error': "This email is already taken" })
+                return res.status(400).json({ 'success': false, 'payload': "This email is already taken" })
             }
 
             //Creating user 
@@ -49,11 +49,11 @@ router.post('/createUser', [
                 }
             }
             const jwtToken = jwt.sign(payload, JWT_Secret)
-            res.json({ 'authToken': jwtToken })
+            res.json({ 'success': true,  'payload': jwtToken })
 
         } catch (error) {
             console.log(error)
-            res.status(500).send("Internal Server Error")
+            res.status(500).send( {'success': false, 'payload': "Internal Server Error"})
         }
     }
 )
@@ -71,19 +71,19 @@ router.post('/login', [
             //Checking for error based on aforementioned rules
             const errors = validationResult(req)
             if (!errors.isEmpty()) {
-                return res.status(400).json({ error: errors.array() })
+                return res.status(400).json({  'success': false, 'payload': errors.array() })
             }
 
             //Checking if user exists
             let user = await User.findOne({ email: req.body.email }) // db crud is async
             if (!user) {
-                return res.status(400).json({ 'error': "Please enter the correct credentials" })
+                return res.status(400).json({  'success': false, 'payload': "Please enter the correct credentials" })
             }
 
             //Verifying password
             const passwordCompare = await bcrypt.compare(req.body.password, user.password)
             if (!passwordCompare) {
-                return res.status(400).json({ 'error': "Please enter the correct credentials" })
+                return res.status(400).json({  'success': false, 'payload': "Please enter the correct credentials" })
             }
 
             // User is authenticated already, so we create and send them a JWT token
@@ -93,11 +93,11 @@ router.post('/login', [
                 }
             }
             const jwtToken = jwt.sign(payload, JWT_Secret)
-            res.json({ 'authToken': jwtToken })
+            res.json({  'success': true, 'payload': jwtToken })
 
         } catch (error) {
             console.log(error)
-            res.status(500).send("Internal Server Error")
+            res.status(500).send({ 'success': false, 'payload': "Internal Server Error"})
         }
     }
 )
@@ -109,10 +109,10 @@ router.post('/getUser', fetchUser, async (req, res) => {
     try {
         userId = req.user.id
         const user = await User.findById(userId).select("-password") // fetch all user details except the password
-        res.send({user})
+        res.send({'success': true, 'payload': user})
     } catch (error) {
         console.log(error)
-        res.status(500).send("Internal Server Error")
+        res.status(500).send({ 'success': false, 'payload': "Internal Server Error"})
     }
 })
 /* The fetch user is a middleware, which runs before the async function. It simply gets the JWT from request header 
