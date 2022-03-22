@@ -21,6 +21,6 @@ app.use('/api/auth', require('./routes/auth'))
 app.use('/api/note', require('./routes/note'))
 
 
-app.listen(port, () => {
+app.listen(process.env.PORT || 5000, () => {
   console.log(`NoteNest is listening on port ${port}`)
 })
