@@ -1,5 +1,5 @@
 const jwt = require("jsonwebtoken");
-const JWT_Secret = "fg7erfgt543r%^$#"
+const JWT_SECRET = process.env.JWT_SECRET+""
 
 const fetchUser = (req, res, next) => {
 
@@ -17,7 +17,7 @@ const fetchUser = (req, res, next) => {
             })
         }
 
-        const data = jwt.verify(JWT, JWT_Secret)
+        const data = jwt.verify(JWT, JWT_SECRET)
         req.user = data.user
         next()
         // next represents the next function to be executed, once the middleware is run

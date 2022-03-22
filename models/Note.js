@@ -4,7 +4,7 @@ const { Schema } = mongoose
 
 const NoteSchema = new Schema({
     user: {
-        type: mongoose.Schema.Types.ObjectId, // foreign key
+        type: mongoose.Schema.Types.ObjectId, // equivalent of a foreign key
         ref: 'user'
     },
     title: {

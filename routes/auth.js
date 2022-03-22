@@ -7,7 +7,7 @@ const jwt = require("jsonwebtoken");
 
 const fetchUser = require("../middleware/fetchUser")
 
-const JWT_Secret = "fg7erfgt543r%^$#"
+const JWT_SECRET = ""+process.env.JWT_SECRET
 
 const generateResponse = (success, message = "", data = [], error = []) => {
     const response = {
@@ -60,7 +60,7 @@ router.post('/createUser', [
                     id: user.id
                 }
             }
-            const jwtToken = jwt.sign(payload, JWT_Secret)
+            const jwtToken = jwt.sign(payload, JWT_SECRET)
 
             res.json(generateResponse(true, `jwt auth token`, jwtToken, []))
 
@@ -106,7 +106,8 @@ router.post('/login', [
                     id: user.id
                 }
             }
-            const jwtToken = jwt.sign(payload, JWT_Secret)
+            // console.log({'JWT_SECRET': JWT_SECRET})
+            const jwtToken = jwt.sign(payload, JWT_SECRET)
             res.json( generateResponse(true, `jwt auth token`, jwtToken, []) )
 
         } catch (error) {
