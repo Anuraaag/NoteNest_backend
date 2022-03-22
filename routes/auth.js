@@ -9,6 +9,18 @@ const fetchUser = require("../middleware/fetchUser")
 
 const JWT_Secret = "fg7erfgt543r%^$#"
 
+const generateResponse = (success, message = "", data = [], error = []) => {
+    const response = {
+        'success': success,
+        'payload': {
+            'message': message,
+            'data': data,
+            'error': error
+        }
+    }
+    return response
+}
+
 /* Route-1: Creating a new user - /api/auth/createUser */
 //first argument has the path, second arg contains the rules, third implements the body
 router.post('/createUser', [
@@ -23,27 +35,13 @@ router.post('/createUser', [
             //Checking for errors based on aforementioned rules
             const errors = validationResult(req)
             if (!errors.isEmpty()) {
-                return res.status(400).json({
-                    'success': false,
-                    'payload': {
-                        'message': errors.array()[0].msg,
-                        'data': [],
-                        'error': errors.array()
-                    }
-                })
+                return res.status(400).json(generateResponse(false, errors.array()[0].msg, [], errors.array()))
             }
 
             //Checking if user already exists
             let user = await User.findOne({ email: req.body.email }) // db crud is async
             if (user) {
-                return res.status(400).json({
-                    'success': false,
-                    'payload': {
-                        'message': `This email is already taken`,
-                        'data': [],
-                        'error': []
-                    }
-                })
+                return res.status(400).json(generateResponse(false, `This email is already taken`, [], []))
             }
 
             //Creating user 
@@ -64,26 +62,12 @@ router.post('/createUser', [
             }
             const jwtToken = jwt.sign(payload, JWT_Secret)
 
-            res.json({
-                'success': true,
-                'payload': {
-                    'message': "jwt auth token",
-                    'data': jwtToken,
-                    'error': errors.array()
-                }
-            })
+            res.json(generateResponse(true, `jwt auth token`, jwtToken, []))
 
 
         } catch (error) {
             console.log(error)
-            res.status(500).send({
-                'success': false,
-                'payload': {
-                    'message': "Internal Server Error",
-                    'data': [],
-                    'error': []
-                }
-            })
+            res.status(500).send(generateResponse(false, `Internal Server Error`, [], []))
         }
     }
 )
@@ -101,41 +85,19 @@ router.post('/login', [
             //Checking for error based on aforementioned rules
             const errors = validationResult(req)
             if (!errors.isEmpty()) {
-                return res.status(400).json({
-                    'success': false,
-                    'payload': {
-                        'message': errors.array()[0].msg,
-                        'data': [],
-                        'error': errors.array()
-                    }
-                })
-
+                return res.status(400).json(generateResponse(false, errors.array()[0].msg, [], errors.array()))
             }
 
             //Checking if user exists
             let user = await User.findOne({ email: req.body.email }) // db crud is async
             if (!user) {
-                return res.status(400).json({
-                    'success': false,
-                    'payload': {
-                        'message': "Please enter the correct credentials",
-                        'data': [],
-                        'error': []
-                    }
-                })
+                return res.status(400).json(generateResponse(false, `Please enter the correct credentials`, [], []))
             }
 
             //Verifying password
             const passwordCompare = await bcrypt.compare(req.body.password, user.password)
             if (!passwordCompare) {
-                return res.status(400).json({
-                    'success': false,
-                    'payload': {
-                        'message': "Please enter the correct credentials",
-                        'data': [],
-                        'error': []
-                    }
-                })
+                return res.status(400).json(generateResponse(false, `Please enter the correct credentials`, [], []))
             }
 
             // User is authenticated already, so we create and send them a JWT token
@@ -145,25 +107,11 @@ router.post('/login', [
                 }
             }
             const jwtToken = jwt.sign(payload, JWT_Secret)
-            res.json({
-                'success': true,
-                'payload': {
-                    'message': "jwt auth token",
-                    'data': jwtToken,
-                    'error': []
-                }
-            })
+            res.json( generateResponse(true, `jwt auth token`, jwtToken, []) )
 
         } catch (error) {
             console.log(error)
-            res.status(500).send({
-                'success': false,
-                'payload': {
-                    'message': "Internal Server Error",
-                    'data': [],
-                    'error': []
-                }
-            })
+            res.status(500).send( generateResponse(false, `Internal Server Error`, [], []) )
         }
     }
 )
@@ -175,24 +123,10 @@ router.post('/getUser', fetchUser, async (req, res) => {
     try {
         userId = req.user.id
         const user = await User.findById(userId).select("-password") // fetch all user details except the password
-        res.send({
-            'success': true,
-            'payload': {
-                'message': "user details",
-                'data': user,
-                'error': []
-            }
-        })
+        res.send( generateResponse(true, `user details`, user, []) )
     } catch (error) {
         console.log(error)
-        res.status(500).send({
-            'success': false,
-            'payload': {
-                'message': "Internal Server Error",
-                'data': [],
-                'error': []
-            }
-        })
+        res.status(500).send( generateResponse(false, `Internal Server Error`, [], []) )        
     }
 })
 /* The fetch user is a middleware, which runs before the async function. It simply gets the JWT from request header 

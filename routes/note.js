@@ -5,6 +5,19 @@ const Note = require('../models/Note')
 const { body, validationResult } = require('express-validator')
 
 
+const generateResponse = (success, message = "", data = [], error = []) => {
+    const response = {
+        'success': success,
+        'payload': {
+            'message': message,
+            'data': data,
+            'error': error
+        }
+    }
+    return response
+}
+
+
 /* Route-1: Adding a note for a user - /api/note/create */
 router.post('/create', fetchUser, [
     body('title', 'Enter a valid title').isLength({ min: 3 }),
@@ -15,15 +28,9 @@ router.post('/create', fetchUser, [
 
             //Checking for errors based on aforementioned rules
             const errors = validationResult(req)
+
             if (!errors.isEmpty()) {
-                return res.status(400).json({
-                    'success': false,
-                    'payload': {
-                        'message': errors.array()[0].msg,
-                        'data': [],
-                        'error': errors.array()
-                    }
-                })
+                return res.status(400).json(generateResponse(false, errors.array()[0].msg, [], errors.array()))
             }
 
             // const {title, description, tag} = req.body
@@ -39,26 +46,12 @@ router.post('/create', fetchUser, [
                 user: req.user.id
             })
 
-            res.send({
-                'success': true,
-                'payload': {
-                    'message': `saved note`,
-                    'data': savedNote,
-                    'error': []
-                }
-            })
+            res.send(generateResponse(true, `saved note`, savedNote, []))
 
 
         } catch (error) {
             console.log(error)
-            res.status(500).send({
-                'success': false,
-                'payload': {
-                    'message': "Internal Server Error",
-                    'data': [],
-                    'error': []
-                }
-            })
+            res.status(500).send(generateResponse(false, `Internal Server Error`, [], []))
         }
     }
 )
@@ -69,25 +62,11 @@ router.get('/fetch', fetchUser,
         try {
             //Fetching and returning notes
             const notes = await Note.find({ user: req.user.id })
-            res.json({
-                'success': true,
-                'payload': {
-                    'message': "notes",
-                    'data': notes,
-                    'error': []
-                }
-            })
+            res.json(generateResponse(true, `notes`, notes, []))
 
         } catch (error) {
             console.log(error)
-            res.status(500).send({
-                'success': false,
-                'payload': {
-                    'message': "Internal Server Error",
-                    'data': [],
-                    'error': []
-                }
-            })
+            res.status(500).send(generateResponse(false, `Internal Server Error`, [], []))
         }
     }
 )
@@ -104,39 +83,18 @@ router.put('/update/:id', fetchUser, [
             //Checking for errors based on aforementioned rules
             const errors = validationResult(req)
             if (!errors.isEmpty()) {
-                return res.status(400).json({
-                    'success': false,
-                    'payload': {
-                        'message': errors.array()[0].msg,
-                        'data': [],
-                        'error': errors.array()
-                    }
-                })
+                return res.status(400).json(generateResponse(false, errors.array()[0].msg, [], errors.array()))
             }
 
             //Checking if the note exists
             let note = await Note.findById(req.params.id) // db crud is async
             if (!note) {
-                return res.status(404).json({
-                    'success': false,
-                    'payload': {
-                        'message': "Note not found",
-                        'data': [],
-                        'error': []
-                    }
-                })
+                return res.status(404).json(generateResponse(false, `Note not found`, [], []))
             }
 
             // checking if the note belongs to this user
             if (note.user.toString() !== req.user.id) {
-                return res.status(401).json({
-                    'success': false,
-                    'payload': {
-                        'message': "Not Allowed",
-                        'data': [],
-                        'error': []
-                    }
-                })
+                return res.status(401).json(generateResponse(false, `Not Allowed`, [], []))
             }
 
             //Updating the note
@@ -148,26 +106,12 @@ router.put('/update/:id', fetchUser, [
 
             const updatedNote = await Note.findByIdAndUpdate(req.params.id, { $set: updateInfo }, { new: true })
 
-            res.json({
-                'success': true,
-                'payload': {
-                    'message': `updated note`,
-                    'data': updatedNote,
-                    'error': []
-                }
-            })
+            res.json(generateResponse(true, `updated note`, updatedNote, []))
 
 
         } catch (error) {
             console.log(error)
-            res.status(500).send({
-                'success': false,
-                'payload': {
-                    'message': "Internal Server Error",
-                    'data': [],
-                    'error': []
-                }
-            })
+            res.status(500).send(generateResponse(false, `Internal Server Error`, [], []))
         }
     }
 )
@@ -180,51 +124,22 @@ router.delete('/delete/:id', fetchUser, async (req, res) => {
         //Checking if the note exists
         let note = await Note.findById(req.params.id) // db crud is async
         if (!note) {
-            return res.status(404).json({
-                'success': false,
-                'payload': {
-                    'message': `Note not found`,
-                    'data': updatedNote,
-                    'error': []
-                }
-            })
+            return res.status(404).json(generateResponse(false, `Note not found`, [], []))
         }
 
         // checking if the note belongs to this user
         if (note.user.toString() !== req.user.id) {
-            return res.status(401).send({
-                'success': false,
-                'payload': {
-                    'message': `Not Allowed`,
-                    'data': [],
-                    'error': []
-                }
-            })
+            return res.status(401).send(generateResponse(false, `Not Allowed`, [], []))
         }
 
         //Deleting the note
         const nodeDeleted = await Note.findByIdAndDelete(req.params.id)
-        res.json({
-            'success': true,
-            'payload': {
-                'message': `deleted note`,
-                'data': nodeDeleted,
-                'error': []
-            }
-        })
+        res.json(generateResponse(true, `deleted note`, nodeDeleted, []))
 
     } catch (error) {
         console.log(error)
-        res.status(500).send({
-            'success': false,
-            'payload': {
-                'message': "Internal Server Error",
-                'data': [],
-                'error': []
-            }
-        })
+        res.status(500).send(generateResponse(false, `Internal Server Error`, [], []))
     }
-}
-)
+})
 
 module.exports = router
